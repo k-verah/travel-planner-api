@@ -12,7 +12,7 @@ dotenv.config();
       type: 'sqlite',
       database: process.env.DATABASE_PATH,
       autoLoadEntities: true,
-      synchronize: true, // SOLO para desarrollo
+      synchronize: true, 
     }),
     CountriesModule,
     TravelPlansModule,

@@ -8,6 +8,6 @@ export interface CountriesApi {
     subregion: string;
     capital: string;
     population: number;
-    flagUrl: string;   // ← corregido
+    flagUrl: string;
   }>;
 }
