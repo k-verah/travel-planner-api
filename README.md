@@ -1,21 +1,5 @@
 # **README.md — Travel Planner API (Pre-parcial + Parcial)**
 
-````markdown
-# Travel Planner API — Pre-parcial + Parcial
-
-API construida con NestJS + TypeORM + SQLite que gestiona países y planes de viaje.  
-Incluye:
-
-- Lógica de caché local para países  
-- Integración con la API externa RestCountries  
-- CRUD completo de Travel Plans  
-- Validaciones con DTOs  
-- Middleware personalizado de logging  
-- Guard de autorización** para proteger operaciones sensibles  
-- Endpoint protegido DELETE /countries/:code
-````
----
-
 # 1. Cómo ejecutar el proyecto
 
 ## 1.1 Clonar el repositorio
