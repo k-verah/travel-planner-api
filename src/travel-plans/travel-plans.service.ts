@@ -14,9 +14,7 @@ export class TravelPlansService {
     private readonly countriesService: CountriesService,
   ) {}
 
-  // ---------------------------------------------------------
-  // CREATE
-  // ---------------------------------------------------------
+  
   async create(dto: CreateTravelPlanDto) {
     // 1. Validar que el país exista usando CountriesService y su lógica de caché
     const country = await this.countriesService.findOne(dto.countryCode);
@@ -32,16 +30,12 @@ export class TravelPlansService {
     };
   }
 
-  // ---------------------------------------------------------
-  // GET ALL
-  // ---------------------------------------------------------
+  
   async findAll(): Promise<TravelPlan[]> {
     return this.repo.find();
   }
 
-  // ---------------------------------------------------------
-  // GET ONE BY ID
-  // ---------------------------------------------------------
+  
   async findOne(id: number): Promise<TravelPlan> {
     const plan = await this.repo.findOne({ where: { id } });
 
