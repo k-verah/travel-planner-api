@@ -1,98 +1,293 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# **README.md — Travel Planner API (Pre-parcial + Parcial)**
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+````markdown
+# Travel Planner API — Pre-parcial + Parcial
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+API construida con NestJS + TypeORM + SQLite que gestiona países y planes de viaje.  
+Incluye:
 
-## Description
+- Lógica de caché local para países  
+- Integración con la API externa RestCountries  
+- CRUD completo de Travel Plans  
+- Validaciones con DTOs  
+- Middleware personalizado de logging  
+- Guard de autorización** para proteger operaciones sensibles  
+- Endpoint protegido DELETE /countries/:code
+````
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+# 1. Cómo ejecutar el proyecto
 
-## Project setup
+## 1.1 Clonar el repositorio
+```bash
+git clone https://github.com/k-verah/travel-planner-api
+cd travel-planner-api
+````
+
+## 1.2 Instalar dependencias
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+## 1.3 Variables de entorno
+
+Crear un archivo `.env` con:
+
+```
+DATABASE_PATH=travel.db
+```
+
+## 1.4 Ejecutar el proyecto
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run start:dev
 ```
 
-## Run tests
+La API corre en:
+
+[http://localhost:3000](http://localhost:3000)
+
+---
+
+# 2. Arquitectura General
+
+La API está compuesta por dos módulos principales:
+
+---
+
+## 2.1 CountriesModule
+
+Gestiona países mediante:
+
+* Consulta en caché local (base de datos).
+* Consulta a RestCountries si no existe localmente.
+* Almacenamiento de sólo los campos necesarios.
+* Desacoplamiento dominio–infraestructura mediante un provider externo.
+
+### Atributos del modelo `Country`
+
+* code
+* name
+* region
+* subregion
+* capital
+* population
+* flagUrl
+* createdAt
+* updatedAt
+
+---
+
+## 2.2 TravelPlansModule
+
+Gestiona los planes de viaje y valida:
+
+* Fechas válidas
+* Campos obligatorios
+* Existencia del país usando CountriesService
+
+### Atributos del modelo `TravelPlan`
+
+* id
+* countryCode
+* title
+* startDate
+* endDate
+* notes
+* createdAt
+* updatedAt
+
+---
+
+# 3. Provider externo: RestCountriesApiService
+
+Para evitar depender directamente de la API externa, se implementó:
+
+* Una interfaz `CountriesApi`
+* La clase `RestCountriesApiService` que consume la API real
+* Inyección del provider en el CountriesService
+
+### Flujo:
+
+```
+CountriesService.findOne("COL")
+  -> Buscar en BD
+       -> Existe -> origin: "local-cache"
+       -> No existe -> Consultar API externa
+             -> Mapear campos
+             -> Guardar en BD
+             -> origin: "external-api"
+```
+
+---
+
+# 4. Documentación de Endpoints
+
+---
+
+## 4.1 Countries
+
+### GET /countries
+
+Lista todos los países en caché.
+
+### GET /countries/:code
+
+Devuelve un país.
+Incluye `origin: "local-cache"` o `"external-api"`.
+
+---
+
+## 4.2 Travel Plans
+
+### POST /travel-plans
+
+Crea un plan.
+
+**Body:**
+
+```json
+{
+  "countryCode": "COL",
+  "title": "Vacaciones en Colombia",
+  "startDate": "2025-06-10",
+  "endDate": "2025-06-20",
+  "notes": "Visitar Medellín, Bogotá y Cartagena"
+}
+```
+
+### GET /travel-plans
+
+Lista todos los planes.
+
+### GET /travel-plans/:id
+
+Devuelve un plan por ID.
+
+---
+
+# 5. Extensión del Parcial — Nuevas Funcionalidades
+
+La extensión incluye:
+
+* Middleware global de logging
+* Guard personalizado
+* Endpoint sensible protegido
+* Nuevos archivos para providers, interfaces y guards
+
+Estas mejoras permiten simular una API real con seguridad y trazabilidad.
+
+---
+
+# 6. Middleware de Logging
+
+Archivo:
+
+```
+src/common/middleware/logging.middleware.ts
+```
+
+Registra por cada request:
+
+* Método HTTP
+* Ruta
+* Timestamp
+* Tiempo de ejecución
+
+### Validación:
+
+1. Levantar API
+2. Ejecutar:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+GET http://localhost:3000/countries
 ```
 
-## Deployment
+3. Verás algo como:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```
+[LoggingMiddleware] GET /countries - 2025-11-21T10:25:14 - 4ms
+```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
+
+# 7. Guard de Eliminación — `DeleteCountryGuard`
+
+Archivo:
+
+```
+src/countries/guards/delete-country.guard.ts
+```
+
+Este guard valida reglas de negocio antes de permitir borrar un país.
+
+### Endpoint protegido:
+
+```
+DELETE /countries/:code
+```
+
+### Comportamiento:
+
+* Si el guard **rechaza**, retorna `403 Forbidden`.
+* Si el guard **permite**, se elimina el país con `200 OK`.
+
+### Cómo probarlo:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+DELETE http://localhost:3000/countries/COL
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+# 8. Pruebas recomendadas
 
-Check out a few resources that may come in handy when working with NestJS:
+1. **Consultar un país no cacheado**
+   -> Debe devolver `origin: "external-api"`
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+2. **Consultar el mismo país nuevamente**
+   -> Debe devolver `origin: "local-cache"`
 
-## Support
+3. **Crear un plan de viaje**
+   -> Valida fechas y existencia del país
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+4. **Probar el endpoint protegido**
 
-## Stay in touch
+```bash
+DELETE http://localhost:3000/countries/COL
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+5. **Ver logging en consola**
+   -> Confirma que el middleware funciona
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# 9. Modelos de Datos
+
+## Country
+
+```ts
+code: string;
+name: string;
+region: string;
+subregion: string;
+capital: string;
+population: number;
+flagUrl: string;
+createdAt: Date;
+updatedAt: Date;
+```
+
+## TravelPlan
+
+```ts
+id: number;
+countryCode: string;
+title: string;
+startDate: Date;
+endDate: Date;
+notes?: string;
+createdAt: Date;
+updatedAt: Date;
+```
