@@ -21,7 +21,7 @@ export class CountriesService {
   async findOne(code: string) {
     const upper = code.toUpperCase();
 
-    // 1️⃣ Buscar en BD (caché local)
+
     const cached = await this.repo.findOne({ where: { code: upper } });
 
     if (cached) {
@@ -31,14 +31,14 @@ export class CountriesService {
       };
     }
 
-    // 2️⃣ Consultar API externa
+
     const external = await this.externalApi.getCountryByCode(upper);
 
     if (!external) {
       throw new NotFoundException(`Country ${upper} not found`);
     }
 
-    // 3️⃣ Guardar solo los campos necesarios en la BD
+
     const saved = await this.repo.save(
       this.repo.create({
         code: external.code,
@@ -51,7 +51,7 @@ export class CountriesService {
       }),
     );
 
-    // 4️⃣ Devolver indicando que vino de la API externa
+    
     return {
       ...saved,
       origin: 'external-api',
